@@ -1,35 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{
-margin:0;
-font-family:system-ui;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
-.card{
-padding:16px 20px;
-border-radius:12px;
-background:#f2e3ee;
-font-size:20px;
-font-weight:600;
-}
-</style>
-</head>
-
-<body>
-
-<div class="card">
-<span id="temp">Loading...</span>
-</div>
-
 <script>
-const lat = new URLSearchParams(location.search).get("lat");
-const lon = new URLSearchParams(location.search).get("lon");
+const params = new URLSearchParams(location.search);
+
+// accepteert zowel lat/lon als latitude/longitude
+const lat = params.get("lat") || params.get("latitude");
+const lon = params.get("lon") || params.get("longitude");
+
+if(!lat || !lon){
+  document.getElementById("temp").innerHTML = "No coordinates";
+}else{
 
 fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)
 .then(r=>r.json())
@@ -37,7 +15,5 @@ fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&c
 document.getElementById("temp").innerHTML =
 Math.round(data.current_weather.temperature) + "°C";
 });
+}
 </script>
-
-</body>
-</html>
