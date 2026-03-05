@@ -1,53 +1,43 @@
-<!doctype html>
-<html lang="nl">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Temperatuur</title>
-  <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
-    .box{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
-    .card{padding:18px 20px;border:1px solid rgba(0,0,0,.12);border-radius:14px;min-width:220px;text-align:center;}
-    .temp{font-size:44px;font-weight:700;line-height:1;margin:6px 0 0;}
-    .meta{opacity:.7;font-size:13px;margin-top:10px;}
-  </style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{
+margin:0;
+font-family:system-ui;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+.card{
+padding:16px 20px;
+border-radius:12px;
+background:#f2e3ee;
+font-size:20px;
+font-weight:600;
+}
+</style>
 </head>
+
 <body>
-  <div class="box">
-    <div class="card">
-      <div id="place" style="font-weight:600;">Huidige temperatuur</div>
-      <div class="temp" id="temp">…</div>
-      <div class="meta" id="meta"></div>
-    </div>
-  </div>
+
+<div class="card">
+<span id="temp">Loading...</span>
+</div>
 
 <script>
-  const qs = new URLSearchParams(location.search);
-  const lat = qs.get("lat");
-  const lon = qs.get("lon");
-  const name = qs.get("name") || "";
+const lat = new URLSearchParams(location.search).get("lat");
+const lon = new URLSearchParams(location.search).get("lon");
 
-  if (name) document.getElementById("place").textContent = name;
-
-  async function run(){
-    if(!lat || !lon){
-      document.getElementById("temp").textContent = "—";
-      document.getElementById("meta").textContent = "Geen lat/lon meegegeven";
-      return;
-    }
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current_weather=true&timezone=auto`;
-    const r = await fetch(url);
-    const j = await r.json();
-    const cw = j.current_weather;
-    if(!cw){
-      document.getElementById("temp").textContent = "—";
-      document.getElementById("meta").textContent = "Geen current_weather";
-      return;
-    }
-    document.getElementById("temp").textContent = `${Math.round(cw.temperature)}°C`;
-    document.getElementById("meta").textContent = `Laatste update: ${cw.time}`;
-  }
-  run();
+fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)
+.then(r=>r.json())
+.then(data=>{
+document.getElementById("temp").innerHTML =
+Math.round(data.current_weather.temperature) + "°C";
+});
 </script>
+
 </body>
 </html>
