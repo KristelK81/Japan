@@ -1,19 +1,91 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenMeteo Debug</title>
+  <style>
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    .wrap{padding:14px}
+    .card{border:1px solid rgba(0,0,0,.15);border-radius:12px;padding:12px;margin:10px 0;}
+    .big{font-size:42px;font-weight:800}
+    .muted{opacity:.7}
+    code{word-break:break-all}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="muted">Status</div>
+      <div id="status">Pagina geladen ✅</div>
+    </div>
+
+    <div class="card">
+      <div class="muted">Querystring</div>
+      <code id="qs"></code>
+    </div>
+
+    <div class="card">
+      <div class="muted">Gevonden coördinaten</div>
+      <div>lat: <code id="lat">—</code></div>
+      <div>lon: <code id="lon">—</code></div>
+    </div>
+
+    <div class="card">
+      <div class="muted">Resultaat</div>
+      <div class="big" id="temp">…</div>
+      <div class="muted" id="meta"></div>
+    </div>
+  </div>
+
 <script>
-const params = new URLSearchParams(location.search);
+(async function(){
+  try{
+    const params = new URLSearchParams(location.search);
+    document.getElementById("qs").textContent = location.search || "(leeg)";
 
-// accepteert zowel lat/lon als latitude/longitude
-const lat = params.get("lat") || params.get("latitude");
-const lon = params.get("lon") || params.get("longitude");
+    // accepteer lat/lon of latitude/longitude en zet komma om naar punt
+    const latRaw = (params.get("lat") || params.get("latitude") || "").trim();
+    const lonRaw = (params.get("lon") || params.get("longitude") || "").trim();
+    const lat = latRaw.replace(",", ".");
+    const lon = lonRaw.replace(",", ".");
 
-if(!lat || !lon){
-  document.getElementById("temp").innerHTML = "No coordinates";
-}else{
+    document.getElementById("lat").textContent = lat || "(ontbreekt)";
+    document.getElementById("lon").textContent = lon || "(ontbreekt)";
 
-fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)
-.then(r=>r.json())
-.then(data=>{
-document.getElementById("temp").innerHTML =
-Math.round(data.current_weather.temperature) + "°C";
-});
-}
+    if(!lat || !lon){
+      document.getElementById("temp").textContent = "Geen coords";
+      document.getElementById("meta").textContent = "Geef ?lat=..&lon=.. mee";
+      return;
+    }
+
+    const api = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current_weather=true&timezone=auto`;
+    document.getElementById("meta").textContent = "API: " + api;
+
+    const r = await fetch(api);
+    if(!r.ok){
+      document.getElementById("temp").textContent = "API error";
+      document.getElementById("meta").textContent = "HTTP " + r.status;
+      return;
+    }
+
+    const j = await r.json();
+    const cw = j.current_weather;
+
+    if(!cw){
+      document.getElementById("temp").textContent = "Geen data";
+      document.getElementById("meta").textContent = "current_weather ontbreekt";
+      return;
+    }
+
+    document.getElementById("temp").textContent = Math.round(cw.temperature) + "°C";
+    document.getElementById("meta").textContent = "Update: " + cw.time;
+  }catch(e){
+    document.getElementById("status").textContent = "Script error ❌";
+    document.getElementById("temp").textContent = "Error";
+    document.getElementById("meta").textContent = String(e);
+  }
+})();
 </script>
+</body>
+</html>
